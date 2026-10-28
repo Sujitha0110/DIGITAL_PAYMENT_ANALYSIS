@@ -1,0 +1,1288 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Digital Payment Analysis | Analytics & ML Risk Dashboard</title>
+  <meta name="description" content="Live interactive multi-tier digital payment analysis, retry recovery, pending monitoring, reconciliation audit, and ML failure risk prediction dashboard.">
+  
+  <!-- Modern Typography from Google Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700&family=Outfit:wght@500;600;700;800;900&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  
+  <!-- Chart.js Engine (Local Zero-Dependency Bundle with CDN Fallback) -->
+  <script src="chart.min.js"></script>
+  <script>
+    if (typeof Chart === 'undefined') {
+      document.write('<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"><\/script>');
+    }
+  </script>
+  
+  <!-- Custom Styling -->
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <div class="app-container">
+    <!-- SIDEBAR NAVIGATION -->
+    <aside class="sidebar">
+      <div class="brand-section">
+        <div class="brand-icon-box">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+            <rect x="2" y="5" width="20" height="14" rx="2"></rect>
+            <line x1="2" y1="10" x2="22" y2="10"></line>
+          </svg>
+        </div>
+        <div class="brand-info">
+          <h1>Digital Payment</h1>
+          <span>Analysis Dashboard</span>
+        </div>
+      </div>
+
+      <nav class="sidebar-nav">
+        <div class="nav-label">Analytics Suite</div>
+        
+        <a class="nav-item active" data-page="executive" id="nav-executive">
+          <span class="nav-icon">📊</span>
+          <span>Executive Overview</span>
+          <span class="nav-badge">Core</span>
+        </a>
+
+        <a class="nav-item" data-page="failure" id="nav-failure">
+          <span class="nav-icon">⚠️</span>
+          <span>Failure Analysis</span>
+          <span class="nav-badge danger">19.5%</span>
+        </a>
+
+        <a class="nav-item" data-page="retry" id="nav-retry">
+          <span class="nav-icon">🔄</span>
+          <span>Retry Recovery</span>
+          <span class="nav-badge" style="background: rgba(16,185,129,0.2); color:#34D399;">₹5.57M</span>
+        </a>
+
+        <a class="nav-item" data-page="pending" id="nav-pending">
+          <span class="nav-icon">⏱️</span>
+          <span>Pending Monitoring</span>
+          <span class="nav-badge danger">535 Stuck</span>
+        </a>
+
+        <a class="nav-item" data-page="refund" id="nav-refund">
+          <span class="nav-icon">⚖️</span>
+          <span>Refund & Settlement</span>
+          <span class="nav-badge" style="background: rgba(245,158,11,0.2); color:#FBBF24;">Recon</span>
+        </a>
+
+        <div class="nav-label" style="margin-top: 14px;">Predictive AI</div>
+
+        <a class="nav-item" data-page="ml" id="nav-ml">
+          <span class="nav-icon">🤖</span>
+          <span>ML Risk Analysis</span>
+          <span class="nav-badge" style="background: linear-gradient(135deg, #6366F1, #06B6D4); color:#fff;">Live Sim</span>
+        </a>
+
+        <div class="nav-label" style="margin-top: 14px;">Business Intelligence</div>
+
+        <a class="nav-item" data-page="powerbi" id="nav-powerbi">
+          <span class="nav-icon">📈</span>
+          <span>Power BI Model</span>
+          <span class="nav-badge" style="background: rgba(245, 158, 11, 0.2); color:#FBBF24;">DAX & Schema</span>
+        </a>
+      </nav>
+
+      <div class="sidebar-footer">
+        <div class="system-status">
+          <div class="status-indicator">
+            <div class="status-dot"></div>
+            <span>Dataset: 5,000 Txns</span>
+          </div>
+          <span style="font-size: 11px; font-weight:700; color: var(--accent-cyan);">CLEANED</span>
+        </div>
+        <div class="system-status" style="margin-top: 6px; padding-top: 6px; border-top: 1px dashed rgba(255,255,255,0.08);">
+          <div class="status-indicator">
+            <div class="status-dot" id="api-status-dot" style="background:#10B981; box-shadow: 0 0 6px #10B981;"></div>
+            <span id="api-status-text" style="font-size:11px;">Python Service</span>
+          </div>
+          <span id="api-status-badge" style="font-size: 10px; font-weight:700; color: #10B981;">ACTIVE</span>
+        </div>
+      </div>
+    </aside>
+
+    <!-- MAIN APP CONTENT -->
+    <main class="main-content">
+      <!-- TOP STICKY BAR WITH GLOBAL FILTERS -->
+      <header class="top-header">
+        <div class="header-left">
+          <div class="page-title-box">
+            <h2 id="current-page-title">Executive Overview</h2>
+            <p id="current-page-desc">High-level payment volume, conversion rates, and revenue leakage waterfall</p>
+          </div>
+        </div>
+
+        <!-- Dynamic Filter Controls -->
+        <div class="filter-bar">
+          <div class="filter-group">
+            <span class="filter-label">Gateway</span>
+            <select id="filter-gateway" class="filter-select">
+              <option value="all">All Gateways (3)</option>
+              <option value="Razorpay">Razorpay</option>
+              <option value="Cashfree">Cashfree</option>
+              <option value="PayU">PayU</option>
+            </select>
+          </div>
+
+          <div class="filter-group">
+            <span class="filter-label">Method</span>
+            <select id="filter-method" class="filter-select">
+              <option value="all">All Methods (5)</option>
+              <option value="GPay">GPay</option>
+              <option value="Credit Card">Credit Card</option>
+              <option value="Debit Card">Debit Card</option>
+              <option value="NetBanking">NetBanking</option>
+              <option value="Wallet">Wallet</option>
+            </select>
+          </div>
+
+          <div class="filter-group">
+            <span class="filter-label">Timeline</span>
+            <select id="filter-timeline" class="filter-select">
+              <option value="all">Full Q1 (Jan - Apr 2026)</option>
+              <option value="2026-01">Jan 2026</option>
+              <option value="2026-02">Feb 2026</option>
+              <option value="2026-03">Mar 2026</option>
+              <option value="2026-04">Apr 2026</option>
+            </select>
+          </div>
+
+          <button id="btn-reset-filters" class="btn-reset" title="Reset all global filters">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"></path><path d="M3 3v5h5"></path></svg>
+            Reset
+          </button>
+
+          <!-- Theme Toggle Button -->
+          <button id="btn-theme-toggle" class="btn-theme-toggle" title="Toggle Dark / Light Theme" aria-label="Toggle theme">
+            <!-- Sun icon (shown in dark mode) -->
+            <span class="theme-icon theme-icon-sun">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                <circle cx="12" cy="12" r="5"></circle>
+                <line x1="12" y1="1" x2="12" y2="3"></line><line x1="12" y1="21" x2="12" y2="23"></line>
+                <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line>
+                <line x1="1" y1="12" x2="3" y2="12"></line><line x1="21" y1="12" x2="23" y2="12"></line>
+                <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line>
+              </svg>
+            </span>
+            <!-- Moon icon (shown in light mode) -->
+            <span class="theme-icon theme-icon-moon">
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path>
+              </svg>
+            </span>
+            <span class="theme-label-text">Light</span>
+          </button>
+
+          <button id="btn-export-data" class="btn-action-primary">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>
+            Export CSV
+          </button>
+        </div>
+      </header>
+
+      <!-- CONTENT BODY (PAGE VIEWS) -->
+      <div class="content-body">
+        
+        <!-- ========================================== -->
+        <!-- 1ST PAGE: EXECUTIVE OVERVIEW -->
+        <!-- ========================================== -->
+        <section id="page-executive" class="page-view active">
+          <!-- KPI Metrics Row -->
+          <div class="kpi-grid">
+            <div class="kpi-card">
+              <div class="kpi-header">
+                <span class="kpi-title">Gross Volume</span>
+                <div class="kpi-icon-wrap">₹</div>
+              </div>
+              <div class="kpi-value" id="kpi-exec-volume">₹62.21M</div>
+              <div class="kpi-footer">
+                <span class="kpi-badge neutral" id="kpi-exec-total-txns">5,000 txns</span>
+                <span id="kpi-exec-total-sub">Captured payments</span>
+              </div>
+            </div>
+
+            <div class="kpi-card kpi-success">
+              <div class="kpi-header">
+                <span class="kpi-title">Success Rate</span>
+                <div class="kpi-icon-wrap">✓</div>
+              </div>
+              <div class="kpi-value" id="kpi-exec-success-rate">69.76%</div>
+              <div class="kpi-footer">
+                <span class="kpi-badge positive" id="kpi-exec-success-txns">3,488 txns</span>
+                <span id="kpi-exec-success-vol">₹43.88M captured</span>
+              </div>
+            </div>
+
+            <div class="kpi-card kpi-danger">
+              <div class="kpi-header">
+                <span class="kpi-title">Failure Rate</span>
+                <div class="kpi-icon-wrap">✕</div>
+              </div>
+              <div class="kpi-value" id="kpi-exec-failure-rate">19.54%</div>
+              <div class="kpi-footer">
+                <span class="kpi-badge danger" id="kpi-exec-failed-txns">977 txns</span>
+                <span id="kpi-exec-failed-vol">₹11.82M at risk</span>
+              </div>
+            </div>
+
+            <div class="kpi-card kpi-cyan">
+              <div class="kpi-header">
+                <span class="kpi-title">Retry Recovered</span>
+                <div class="kpi-icon-wrap">🔄</div>
+              </div>
+              <div class="kpi-value" id="kpi-exec-recovered-vol">₹5.57M</div>
+              <div class="kpi-footer">
+                <span class="kpi-badge positive" id="kpi-exec-recovered-txns">441 recovered</span>
+                <span id="kpi-exec-recovered-lift">Lift: +8.82%</span>
+              </div>
+            </div>
+
+            <div class="kpi-card kpi-warning">
+              <div class="kpi-header">
+                <span class="kpi-title">Net Revenue Leakage</span>
+                <div class="kpi-icon-wrap">⚠️</div>
+              </div>
+              <div class="kpi-value" id="kpi-exec-net-loss">₹6.25M</div>
+              <div class="kpi-footer">
+                <span class="kpi-badge danger" id="kpi-exec-unrecovered-badge">Unrecovered</span>
+                <span id="kpi-exec-unrecovered-count">536 failed payments</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Charts Row 1: Volume Trend & Outcome Waterfall -->
+          <div class="grid-2-1">
+            <div class="panel-card">
+              <div class="panel-header">
+                <div class="panel-title-wrap">
+                  <div class="panel-title">Transaction Volume & Outcome Trend</div>
+                </div>
+                <div class="panel-actions">
+                  <span class="badge badge-success">Success</span>
+                  <span class="badge badge-failed">Failed</span>
+                  <span class="badge badge-pending">Pending</span>
+                </div>
+              </div>
+              <div class="chart-container">
+                <canvas id="chart-exec-trend"></canvas>
+              </div>
+            </div>
+
+            <div class="panel-card">
+              <div class="panel-header">
+                <div class="panel-title-wrap">
+                  <div class="panel-title">Revenue Leakage Waterfall</div>
+                </div>
+              </div>
+              <div class="chart-container">
+                <canvas id="chart-exec-waterfall"></canvas>
+              </div>
+            </div>
+          </div>
+
+          <!-- Charts Row 2: Gateway Scorecard & Method Distribution -->
+          <div class="grid-2">
+            <div class="panel-card">
+              <div class="panel-header">
+                <div class="panel-title">Gateway Performance Scorecard</div>
+                <span class="panel-subtitle">Sorted by Success Rate</span>
+              </div>
+              <div class="table-responsive">
+                <table class="scorecard-table" id="table-exec-gateways">
+                  <thead>
+                    <tr>
+                      <th>Gateway</th>
+                      <th>Total Txns</th>
+                      <th>Success Rate</th>
+                      <th>Gross Volume</th>
+                      <th>Latency (P50)</th>
+                    </tr>
+                  </thead>
+                  <tbody></tbody>
+                </table>
+              </div>
+            </div>
+
+            <div class="panel-card">
+              <div class="panel-header">
+                <div class="panel-title">Payment Method Share & Efficiency</div>
+                <span class="panel-subtitle">GPay, Cards, NetBanking, Wallets</span>
+              </div>
+              <div class="chart-container">
+                <canvas id="chart-exec-methods"></canvas>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- ========================================== -->
+        <!-- 2ND PAGE: FAILURE ANALYSIS -->
+        <!-- ========================================== -->
+        <section id="page-failure" class="page-view">
+          <!-- Failure KPI Banner -->
+          <div class="kpi-grid">
+            <div class="kpi-card kpi-danger">
+              <div class="kpi-header">
+                <span class="kpi-title">Failed Transactions</span>
+                <div class="kpi-icon-wrap">✕</div>
+              </div>
+              <div class="kpi-value" id="kpi-fail-count">977</div>
+              <div class="kpi-footer">
+                <span class="kpi-badge danger" id="kpi-fail-volume">₹11,820,132</span>
+                <span>Failed Gross Value</span>
+              </div>
+            </div>
+
+            <div class="kpi-card kpi-purple">
+              <div class="kpi-header">
+                <span class="kpi-title">Technical Timeouts</span>
+                <div class="kpi-icon-wrap">⚡</div>
+              </div>
+              <div class="kpi-value" id="kpi-fail-timeouts">246</div>
+              <div class="kpi-footer">
+                <span class="kpi-badge danger">ERR_GATEWAY_TIMEOUT</span>
+                <span id="kpi-fail-timeouts-pct">25.2% of failures</span>
+              </div>
+            </div>
+
+            <div class="kpi-card kpi-warning">
+              <div class="kpi-header">
+                <span class="kpi-title">Bank Declines</span>
+                <div class="kpi-icon-wrap">🏦</div>
+              </div>
+              <div class="kpi-value" id="kpi-fail-declines">249</div>
+              <div class="kpi-footer">
+                <span class="kpi-badge warning">ERR_BANK_DECLINED</span>
+                <span id="kpi-fail-declines-pct">25.5% of failures</span>
+              </div>
+            </div>
+
+            <div class="kpi-card">
+              <div class="kpi-header">
+                <span class="kpi-title">Customer Errors</span>
+                <div class="kpi-icon-wrap">👤</div>
+              </div>
+              <div class="kpi-value" id="kpi-fail-customer">482</div>
+              <div class="kpi-footer">
+                <span class="kpi-badge neutral">OTP &amp; Insufficient Funds</span>
+                <span id="kpi-fail-customer-pct">49.3% of failures</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Error Pareto & Root Cause Responsibility -->
+          <div class="grid-2">
+            <div class="panel-card">
+              <div class="panel-header">
+                <div class="panel-title">Error Code Volume & Value (Pareto)</div>
+                <span class="panel-subtitle">Why do payments fail?</span>
+              </div>
+              <div class="chart-container">
+                <canvas id="chart-fail-pareto"></canvas>
+              </div>
+            </div>
+
+            <div class="panel-card">
+              <div class="panel-header">
+                <div class="panel-title">Root Cause Responsibility Split</div>
+                <span class="panel-subtitle">Technical vs Issuer Bank vs Customer</span>
+              </div>
+              <div class="chart-container">
+                <canvas id="chart-fail-category"></canvas>
+              </div>
+            </div>
+          </div>
+
+          <!-- Gateway x Method Failure Heatmap -->
+          <div class="panel-card" style="margin-bottom: 26px;">
+            <div class="panel-header">
+              <div>
+                <div class="panel-title">Gateway × Payment Method Failure Heatmap (%)</div>
+                <div class="panel-subtitle">Identifies specific weak integration pipelines (Row = Payment Method, Column = Gateway)</div>
+              </div>
+              <div class="panel-actions">
+                <span class="badge badge-success">&lt;15% Good</span>
+                <span class="badge badge-pending">15-22% Warning</span>
+                <span class="badge badge-failed">&gt;22% Critical</span>
+              </div>
+            </div>
+            <div class="table-responsive">
+              <table class="heatmap-table" id="table-fail-heatmap">
+                <!-- Injected via JS -->
+              </table>
+            </div>
+          </div>
+
+          <!-- Temporal & Ticket Size Patterns -->
+          <div class="grid-3">
+
+            <div class="panel-card">
+              <div class="panel-header">
+                <div class="panel-title">24-Hour Failure Curve</div>
+                <span class="panel-subtitle">Hourly failure rate %</span>
+              </div>
+              <div class="chart-container">
+                <canvas id="chart-fail-hourly"></canvas>
+              </div>
+            </div>
+
+            <div class="panel-card">
+              <div class="panel-header">
+                <div class="panel-title">Failure Rate by Ticket Size</div>
+                <span class="panel-subtitle">Amount bands in ₹5,000 steps</span>
+              </div>
+              <div class="chart-container">
+                <canvas id="chart-fail-amount"></canvas>
+              </div>
+            </div>
+
+            <div class="panel-card">
+              <div class="panel-header">
+                <div class="panel-title">Processing Latency (P50 / P90)</div>
+                <span class="panel-subtitle">Seconds to resolution</span>
+              </div>
+              <div class="chart-container">
+                <canvas id="chart-fail-latency"></canvas>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- ========================================== -->
+        <!-- 3RD PAGE: RETRY RECOVERY -->
+        <!-- ========================================== -->
+        <section id="page-retry" class="page-view">
+          <!-- Retry KPIs -->
+          <div class="kpi-grid">
+            <div class="kpi-card kpi-success">
+              <div class="kpi-header">
+                <span class="kpi-title">Recovered Volume</span>
+                <div class="kpi-icon-wrap">💰</div>
+              </div>
+              <div class="kpi-value" id="kpi-retry-recovered-amount">₹5,574,607.79</div>
+              <div class="kpi-footer">
+                <span class="kpi-badge positive" id="kpi-retry-recovered-count">441 Success Retries</span>
+                <span>Saved from abandonment</span>
+              </div>
+            </div>
+
+            <div class="kpi-card kpi-cyan">
+              <div class="kpi-header">
+                <span class="kpi-title">Recovery Success Rate</span>
+                <div class="kpi-icon-wrap">🎯</div>
+              </div>
+              <div class="kpi-value" id="kpi-retry-rate">45.14%</div>
+              <div class="kpi-footer">
+                <span class="kpi-badge positive" id="kpi-retry-rate-ratio">441 / 977 Failed Txns</span>
+                <span>Recovered</span>
+              </div>
+            </div>
+
+            <div class="kpi-card kpi-warning">
+              <div class="kpi-header">
+                <span class="kpi-title">Success Rate Lift</span>
+                <div class="kpi-icon-wrap">📈</div>
+              </div>
+              <div class="kpi-value" id="kpi-retry-lift-val">+8.82%</div>
+              <div class="kpi-footer">
+                <span class="kpi-badge positive" id="kpi-retry-lift-range">69.76% → 78.58%</span>
+                <span>Effective overall conversion</span>
+              </div>
+            </div>
+
+            <div class="kpi-card kpi-danger">
+              <div class="kpi-header">
+                <span class="kpi-title">Un-retried Opportunity</span>
+                <div class="kpi-icon-wrap">⏳</div>
+              </div>
+              <div class="kpi-value" id="kpi-retry-missed">₹6.25M</div>
+              <div class="kpi-footer">
+                <span class="kpi-badge danger" id="kpi-retry-unretried-count">536 Payments</span>
+                <span>Never retried</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Charts Row: Lift by Method & Error Code Coverage -->
+          <div class="grid-2">
+            <div class="panel-card">
+              <div class="panel-header">
+                <div class="panel-title">Conversion Lift by Payment Method</div>
+                <span class="panel-subtitle">Before Retries (Baseline) vs After Retries (Final)</span>
+              </div>
+              <div class="chart-container">
+                <canvas id="chart-retry-lift"></canvas>
+              </div>
+            </div>
+
+            <div class="panel-card">
+              <div class="panel-header">
+                <div class="panel-title">Recovery Rate by Failure Reason</div>
+                <span class="panel-subtitle">Which error codes recover easiest?</span>
+              </div>
+              <div class="chart-container">
+                <canvas id="chart-retry-reason"></canvas>
+              </div>
+            </div>
+          </div>
+
+          <!-- Monthly Recovery Trend & Speed Distribution -->
+          <div class="grid-2">
+            <div class="panel-card">
+              <div class="panel-header">
+                <div class="panel-title">Monthly Recovered Revenue Trend</div>
+                <span class="panel-subtitle">Cumulative monthly recovery volume</span>
+              </div>
+              <div class="chart-container">
+                <canvas id="chart-retry-trend"></canvas>
+              </div>
+            </div>
+
+            <div class="panel-card">
+              <div class="panel-header">
+                <div class="panel-title">Retry Time-to-Resolution</div>
+                <span class="panel-subtitle">How fast do customers retry successfully?</span>
+              </div>
+              <div class="chart-container">
+                <canvas id="chart-retry-delay"></canvas>
+              </div>
+            </div>
+          </div>
+
+          <!-- High-Value Un-retried Action List -->
+          <div class="table-panel">
+            <div class="table-toolbar">
+              <div>
+                <div class="panel-title">High-Value Un-retried Failed Payments (Call-back & Recovery Priority)</div>
+                <div class="panel-subtitle">Customers with failed transactions who gave up — prime target for automated SMS/WhatsApp recovery</div>
+              </div>
+              <div class="search-input-wrap">
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
+                <input type="text" id="search-unretried" class="search-input" placeholder="Search by Txn ID, Customer, Method...">
+              </div>
+            </div>
+            <div class="table-responsive">
+              <table class="data-table" id="table-unretried">
+                <thead>
+                  <tr>
+                    <th>Txn ID</th>
+                    <th>Customer ID</th>
+                    <th>Payment Method</th>
+                    <th>Gateway</th>
+                    <th>Failed Amount</th>
+                    <th>Failure Reason</th>
+                    <th>Timestamp</th>
+                    <th>Action</th>
+                  </tr>
+                </thead>
+                <tbody></tbody>
+              </table>
+            </div>
+          </div>
+        </section>
+
+        <!-- ========================================== -->
+        <!-- 4TH PAGE: PENDING MONITORING -->
+        <!-- ========================================== -->
+        <section id="page-pending" class="page-view">
+          <!-- Alert Banner for Double Debit Risk -->
+          <div class="alert-banner hazard">
+            <div class="alert-left">
+              <div class="alert-icon">⚠️</div>
+              <div class="alert-text">
+                <h4 id="hazard-banner-title">CRITICAL HAZARD: 40 Double-Debit Risk Transactions Detected</h4>
+                <p>Customers whose initial payment was stuck PENDING, and who subsequently initiated a second payment successfully within 24 hours. High risk of duplicate bank debit!</p>
+              </div>
+            </div>
+            <button class="btn-action-primary" style="background:#EF4444; border-color:#F87171;" id="btn-filter-double-debit">
+              Filter 40 At-Risk Txns
+            </button>
+          </div>
+
+          <!-- Pending KPIs -->
+          <div class="kpi-grid">
+            <div class="kpi-card kpi-warning">
+              <div class="kpi-header">
+                <span class="kpi-title">Total Stuck Pending</span>
+                <div class="kpi-icon-wrap">⏳</div>
+              </div>
+              <div class="kpi-value" id="kpi-pending-count">535</div>
+              <div class="kpi-footer">
+                <span class="kpi-badge warning" id="kpi-pending-volume">₹6.51M</span>
+                <span id="kpi-pending-status-sub">Locked in limbo</span>
+              </div>
+            </div>
+
+            <div class="kpi-card kpi-danger">
+              <div class="kpi-header">
+                <span class="kpi-title">Action Required (&gt;30 min)</span>
+                <div class="kpi-icon-wrap">🚨</div>
+              </div>
+              <div class="kpi-value" id="kpi-pending-over30">213</div>
+              <div class="kpi-footer">
+                <span class="kpi-badge danger" id="kpi-pending-over30-badge">Exceeded SLA</span>
+                <span id="kpi-pending-over30-sub">39.8% of pending</span>
+              </div>
+            </div>
+
+            <div class="kpi-card kpi-warning">
+              <div class="kpi-header">
+                <span class="kpi-title">Jeopardy SLA (&gt;15 min)</span>
+                <div class="kpi-icon-wrap">⏱️</div>
+              </div>
+              <div class="kpi-value" id="kpi-pending-over15">326</div>
+              <div class="kpi-footer">
+                <span class="kpi-badge warning" id="kpi-pending-over15-badge">Stalled</span>
+                <span id="kpi-pending-over15-sub">60.9% of pending</span>
+              </div>
+            </div>
+
+            <div class="kpi-card kpi-purple">
+              <div class="kpi-header">
+                <span class="kpi-title">Double-Debit Exposure</span>
+                <div class="kpi-icon-wrap">👥</div>
+              </div>
+              <div class="kpi-value" id="kpi-pending-double-val">₹512,413</div>
+              <div class="kpi-footer">
+                <span class="kpi-badge danger" id="kpi-pending-double-count">40 Customers</span>
+                <span id="kpi-pending-double-sub">Paid again within 24h</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Charts Row: Pending SLA Severity by Gateway & Method -->
+          <div class="grid-2">
+            <div class="panel-card">
+              <div class="panel-header">
+                <div class="panel-title">Pending Severity Breakdown by Gateway</div>
+                <span class="panel-subtitle">OK (&lt;5m) vs Warning (5-15m) vs Critical (15-30m) vs Action (&gt;30m)</span>
+              </div>
+              <div class="chart-container">
+                <canvas id="chart-pending-gateway"></canvas>
+              </div>
+            </div>
+
+            <div class="panel-card">
+              <div class="panel-header">
+                <div class="panel-title">Pending Inflow by Hour of Day</div>
+                <span class="panel-subtitle">When do payments become stuck?</span>
+              </div>
+              <div class="chart-container">
+                <canvas id="chart-pending-hourly"></canvas>
+              </div>
+            </div>
+          </div>
+
+          <!-- Urgent Escalation Work-List -->
+          <div class="table-panel">
+            <div class="table-toolbar">
+              <div>
+                <div class="panel-title">Pending Escalation Work-List</div>
+                <div class="panel-subtitle">Ranked by snapshot age and double-debit hazard priority</div>
+              </div>
+              <div class="search-input-wrap">
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
+                <input type="text" id="search-pending" class="search-input" placeholder="Search Txn ID, customer...">
+              </div>
+            </div>
+            <div class="table-responsive">
+              <table class="data-table" id="table-pending">
+                <thead>
+                  <tr>
+                    <th>Txn ID</th>
+                    <th>Customer ID</th>
+                    <th>Gateway</th>
+                    <th>Method</th>
+                    <th>Amount</th>
+                    <th>Observed Time</th>
+                    <th>Elapsed Snapshot Age</th>
+                    <th>Double Debit Risk</th>
+                    <th>Severity Status</th>
+                  </tr>
+                </thead>
+                <tbody></tbody>
+              </table>
+            </div>
+            <div class="table-pagination" id="pagination-pending"></div>
+          </div>
+        </section>
+
+        <!-- ========================================== -->
+        <!-- 5TH PAGE: REFUND & SETTLEMENT -->
+        <!-- ========================================== -->
+        <section id="page-refund" class="page-view">
+          <!-- Refund & Settlement KPIs -->
+          <div class="kpi-grid">
+            <div class="kpi-card">
+              <div class="kpi-header">
+                <span class="kpi-title">Total Refund Volume</span>
+                <div class="kpi-icon-wrap">⚖️</div>
+              </div>
+              <div class="kpi-value" id="kpi-refund-total">₹3,527,109.25</div>
+              <div class="kpi-footer">
+                <span class="kpi-badge neutral" id="kpi-refund-count">283 Requests</span>
+                <span id="kpi-refund-share">8.04% of Volume</span>
+              </div>
+            </div>
+
+            <div class="kpi-card kpi-success">
+              <div class="kpi-header">
+                <span class="kpi-title">Completed Refunds</span>
+                <div class="kpi-icon-wrap">✓</div>
+              </div>
+              <div class="kpi-value" id="kpi-refund-completed">₹1,139,761.95</div>
+              <div class="kpi-footer">
+                <span class="kpi-badge positive" id="kpi-refund-completed-count">88 Completed</span>
+                <span>Settled back to customers</span>
+              </div>
+            </div>
+
+            <div class="kpi-card kpi-danger">
+              <div class="kpi-header">
+                <span class="kpi-title">Unsettled Refunds</span>
+                <div class="kpi-icon-wrap">⏳</div>
+              </div>
+              <div class="kpi-value" id="kpi-refund-unsettled">₹2,387,347.30</div>
+              <div class="kpi-footer">
+                <span class="kpi-badge danger" id="kpi-refund-unsettled-count">195 Pending/Stuck</span>
+                <span>Owed to customers</span>
+              </div>
+            </div>
+
+            <div class="kpi-card kpi-warning">
+              <div class="kpi-header">
+                <span class="kpi-title">Gateway Settlement Gap</span>
+                <div class="kpi-icon-wrap">📉</div>
+              </div>
+              <div class="kpi-value" id="kpi-settle-gap">₹75,035.00</div>
+              <div class="kpi-footer">
+                <span class="kpi-badge warning" id="kpi-settle-gap-count">33 Batches</span>
+                <span>Short-settled / Overdue</span>
+              </div>
+            </div>
+
+            <div class="kpi-card kpi-purple">
+              <div class="kpi-header">
+                <span class="kpi-title">Audit Exceptions</span>
+                <div class="kpi-icon-wrap">🚨</div>
+              </div>
+              <div class="kpi-value" id="kpi-audit-count">744 Items</div>
+              <div class="kpi-footer">
+                <span class="kpi-badge danger">₹8.71M At Risk</span>
+                <span>P1/P2/P3 Priority</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Refund Lifecycle Funnel & Gateway Settlement Reconciliation -->
+          <div class="grid-2">
+            <div class="panel-card">
+              <div class="panel-header">
+                <div class="panel-title">Refund SLA Aging Buckets</div>
+                <span class="panel-subtitle">SLA target is 3-5 business days</span>
+              </div>
+              <div class="chart-container">
+                <canvas id="chart-refund-aging"></canvas>
+              </div>
+            </div>
+
+            <div class="panel-card">
+              <div class="panel-header">
+                <div class="panel-title">Gateway Payout Reconciliation (Expected vs Payout)</div>
+                <span class="panel-subtitle">Net of 2% gateway fee and completed refunds</span>
+              </div>
+              <div class="chart-container">
+                <canvas id="chart-settlement-reconciliation"></canvas>
+              </div>
+            </div>
+          </div>
+
+          <!-- Master Reconciliation Audit Ledger -->
+          <div class="table-panel">
+
+            <div class="table-toolbar">
+              <div>
+                <div class="panel-title">Reconciliation Audit Ledger (Three Exception Domains)</div>
+                <div class="panel-subtitle">DEBIT_NOT_CAPTURED, REFUND_EXCEPTION, SETTLEMENT_GAP with priority flags</div>
+              </div>
+              <div style="display: flex; gap: 10px; align-items: center;">
+                <select id="filter-audit-priority" class="filter-select" style="background:var(--bg-secondary); padding:8px 12px; border:1px solid var(--border-subtle); border-radius:var(--border-radius-sm);">
+                  <option value="all">All Priorities (P1, P2, P3)</option>
+                  <option value="P1">P1 - Act Now (Immediate)</option>
+                  <option value="P2">P2 - Investigate This Week</option>
+                  <option value="P3">P3 - Monitor</option>
+                </select>
+                <div class="search-input-wrap" style="width:240px;">
+                  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
+                  <input type="text" id="search-audit" class="search-input" placeholder="Search reference, gateway, issue...">
+                </div>
+              </div>
+            </div>
+            <div class="table-responsive">
+              <table class="data-table" id="table-audit">
+                <thead>
+                  <tr>
+                    <th>Priority</th>
+                    <th>Audit Type</th>
+                    <th>Reference ID</th>
+                    <th>Gateway</th>
+                    <th>Payment Method</th>
+                    <th>Customer</th>
+                    <th>Amount at Risk</th>
+                    <th>Age</th>
+                    <th>Issue Description</th>
+                  </tr>
+                </thead>
+                <tbody></tbody>
+              </table>
+            </div>
+            <div class="table-pagination" id="pagination-audit"></div>
+          </div>
+        </section>
+
+        <!-- ========================================== -->
+        <!-- 6TH PAGE: MACHINE LEARNING RISK ANALYSIS -->
+        <!-- ========================================== -->
+        <section id="page-ml" class="page-view">
+          <!-- ML Model Header & Evaluation Cards -->
+          <div class="kpi-grid">
+            <div class="kpi-card kpi-purple">
+              <div class="kpi-header">
+                <span class="kpi-title">Production Model</span>
+                <div class="kpi-icon-wrap">🤖</div>
+              </div>
+              <div class="kpi-value" id="kpi-ml-prod-model" style="font-size:20px;">Logistic Regression</div>
+              <div class="kpi-footer">
+                <span class="kpi-badge positive">Balanced Weights</span>
+                <span>Optimized for Failure Recall</span>
+              </div>
+            </div>
+
+            <div class="kpi-card">
+              <div class="kpi-header">
+                <span class="kpi-title">Failure Recall</span>
+                <div class="kpi-icon-wrap">🎯</div>
+              </div>
+              <div class="kpi-value" id="kpi-ml-recall">41.67%</div>
+              <div class="kpi-footer">
+                <span class="kpi-badge positive" id="kpi-ml-recall-badge">High Sensitivity</span>
+                <span id="kpi-ml-recall-sub">Catches 5/12 test failures</span>
+              </div>
+            </div>
+
+            <div class="kpi-card kpi-cyan">
+              <div class="kpi-header">
+                <span class="kpi-title">ROC-AUC Score</span>
+                <div class="kpi-icon-wrap">📈</div>
+              </div>
+              <div class="kpi-value" id="kpi-ml-auc">0.4947</div>
+              <div class="kpi-footer">
+                <span class="kpi-badge neutral">Test Set (75 samples)</span>
+                <span>Random Forest: 0.4716</span>
+              </div>
+            </div>
+
+            <div class="kpi-card kpi-warning">
+              <div class="kpi-header">
+                <span class="kpi-title">Risk Tiers Identified</span>
+                <div class="kpi-icon-wrap">📊</div>
+              </div>
+              <div class="kpi-value" id="kpi-ml-tiers">74 Med / 1 Low</div>
+              <div class="kpi-footer">
+                <span class="kpi-badge warning" id="kpi-ml-tiers-badge">Filtered Distribution</span>
+                <span id="kpi-ml-tiers-sub">75 evaluated transactions</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- INTERACTIVE LIVE RISK SIMULATOR / WHAT-IF PREDICTOR -->
+          <div class="simulator-box">
+            <div class="panel-header" style="margin-bottom: 24px;">
+              <div>
+                <h3 style="font-family:var(--font-display); font-size: 20px; font-weight:800; color:#fff;">Interactive Failure Risk Simulator (Real-Time Inference)</h3>
+                <p style="font-size: 13px; color: var(--text-muted);">Adjust incoming transaction parameters to compute live failure probability and risk category using the notebook's trained ML model pipeline</p>
+              </div>
+              <button class="btn-action-primary" id="btn-run-simulation">
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><polygon points="5 3 19 12 5 21 5 3"></polygon></svg>
+                Calculate Risk
+              </button>
+            </div>
+
+            <div class="simulator-grid">
+              <!-- Simulator Inputs Form -->
+              <div class="sim-form-grid">
+                <div class="form-field">
+                  <label for="sim-amount">Transaction Amount (₹)</label>
+                  <input type="number" id="sim-amount" class="form-control" value="18500" min="100" max="100000" step="500">
+                </div>
+
+                <div class="form-field">
+                  <label for="sim-method">Payment Method</label>
+                  <select id="sim-method" class="form-control">
+                    <option value="GPay">GPay (Fast Payout)</option>
+                    <option value="Credit Card">Credit Card</option>
+                    <option value="Debit Card">Debit Card</option>
+                    <option value="NetBanking" selected>NetBanking (Higher Latency)</option>
+                    <option value="Wallet">Wallet</option>
+                  </select>
+                </div>
+
+                <div class="form-field">
+                  <label for="sim-gateway">Target Gateway</label>
+                  <select id="sim-gateway" class="form-control">
+                    <option value="Razorpay" selected>Razorpay</option>
+                    <option value="Cashfree">Cashfree</option>
+                    <option value="PayU">PayU</option>
+                  </select>
+                </div>
+
+                <div class="form-field">
+                  <label for="sim-hour">Time of Day (Hour: 0-23)</label>
+                  <input type="number" id="sim-hour" class="form-control" value="19" min="0" max="23">
+                </div>
+
+                <div class="form-field">
+                  <label for="sim-cust-hist">Customer Past Failure Rate</label>
+                  <select id="sim-cust-hist" class="form-control">
+                    <option value="0.0">0.0 (Clean history / New user)</option>
+                    <option value="0.33">0.33 (1 fail out of 3 txns)</option>
+                    <option value="0.67" selected>0.67 (Frequent OTP/declines)</option>
+                    <option value="1.0">1.00 (Consecutive failures)</option>
+                  </select>
+                </div>
+
+                <div class="form-field">
+                  <label for="sim-day">Day of Week</label>
+                  <select id="sim-day" class="form-control">
+                    <option value="0">Monday</option>
+                    <option value="1">Tuesday</option>
+                    <option value="2">Wednesday</option>
+                    <option value="3">Thursday</option>
+                    <option value="4">Friday</option>
+                    <option value="5">Saturday (Weekend)</option>
+                    <option value="6" selected>Sunday (Weekend Peak)</option>
+                  </select>
+                </div>
+              </div>
+
+              <!-- Simulator Live Output -->
+              <div class="sim-result-card">
+                <div class="gauge-circle" id="sim-gauge-circle" style="background: radial-gradient(circle, rgba(245, 158, 11, 0.15) 0%, transparent 70%); border: 2px dashed rgba(245, 158, 11, 0.5); border-radius: 50%;">
+                  <div class="gauge-val" id="sim-prob-display">63.4<span>%</span></div>
+                </div>
+                <div style="margin-bottom: 8px;">
+                  <span class="badge badge-priority-p2" id="sim-risk-badge" style="font-size: 13px; padding: 5px 14px;">MEDIUM RISK TIER</span>
+                </div>
+                <p style="font-size: 12px; color: var(--text-muted); line-height: 1.4;" id="sim-explanation">
+                  Key risk driver: High historical failure rate (0.67) combined with peak weekend evening hours and NetBanking issuer latency.
+                </p>
+                <div id="sim-backend-tag" style="margin-top: 10px; font-size: 11px; color: var(--accent-cyan); font-family: var(--font-mono); background: rgba(56, 189, 248, 0.08); padding: 6px 10px; border-radius: 6px; border: 1px solid rgba(56, 189, 248, 0.2); display: flex; align-items: center; justify-content: center; gap: 6px;">
+                  <span style="display:inline-block; width:6px; height:6px; border-radius:50%; background:#10B981;"></span>
+                  <span id="sim-backend-text">Python ML API: Live Inference Connected</span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Model Comparison & Confusion Matrix -->
+          <div class="grid-2">
+            <!-- Model Performance Table -->
+            <div class="panel-card">
+              <div class="panel-header">
+                <div class="panel-title">Model Tournament: Logistic Regression vs Random Forest</div>
+                <span class="panel-subtitle">Trained on 374 Cleaned Records (299 Train, 75 Test)</span>
+              </div>
+              <div class="table-responsive">
+                <table class="scorecard-table">
+                  <thead>
+                    <tr>
+                      <th>Metric</th>
+                      <th>Logistic Regression (Balanced)</th>
+                      <th>Random Forest (Ensemble)</th>
+                      <th>Operational Winner</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr>
+                      <td style="font-weight: 600;">Overall Accuracy</td>
+                      <td>40.00%</td>
+                      <td style="color:var(--success-light); font-weight:700;">81.33%</td>
+                      <td><span class="badge badge-neutral">Random Forest (Majority Class)</span></td>
+                    </tr>
+                    <tr>
+                      <td style="font-weight: 600;">Failure Recall (Detecting Fails)</td>
+                      <td style="color:var(--success-light); font-weight:700;">41.67% (5/12)</td>
+                      <td style="color:var(--danger-light); font-weight:700;">0.00% (0/12)</td>
+                      <td><span class="badge badge-success">Logistic Regression</span></td>
+                    </tr>
+                    <tr>
+                      <td style="font-weight: 600;">Failure Precision</td>
+                      <td>11.63%</td>
+                      <td>0.00%</td>
+                      <td><span class="badge badge-success">Logistic Regression</span></td>
+                    </tr>
+                    <tr>
+                      <td style="font-weight: 600;">F1 Score</td>
+                      <td>0.1818</td>
+                      <td>0.0000</td>
+                      <td><span class="badge badge-success">Logistic Regression</span></td>
+                    </tr>
+                    <tr>
+                      <td style="font-weight: 600;">ROC-AUC Discrimination</td>
+                      <td style="color:var(--accent-cyan); font-weight:700;">0.4947</td>
+                      <td>0.4716</td>
+                      <td><span class="badge badge-recovered">Logistic Regression</span></td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+              <div style="margin-top: 15px; padding: 12px; background: rgba(99,102,241,0.08); border-radius: 8px; border: 1px solid rgba(99,102,241,0.2); font-size: 12px; color: var(--text-muted);">
+                💡 <strong>ML Engineering Insight:</strong> In payment fraud and failure prevention, predicting "all transactions will succeed" yields an illusory 81.33% accuracy but fails 100% of the operational risk cases. Logistic Regression with <code>class_weight='balanced'</code> successfully flagged 41.67% of actual failures.
+              </div>
+            </div>
+
+            <!-- Confusion Matrix Display -->
+            <div class="panel-card">
+              <div class="panel-header">
+                <div class="panel-title">Production Confusion Matrix (Test Set: 75)</div>
+                <span class="panel-subtitle">True Status vs Predicted Status</span>
+              </div>
+              
+              <div class="confusion-matrix-grid">
+                <div></div>
+                <div class="cm-header">Pred: SUCCESS</div>
+                <div class="cm-header">Pred: FAILED</div>
+
+                <div class="cm-header" style="writing-mode: vertical-rl; transform: rotate(180deg);">Actual: SUCCESS</div>
+                <div class="cm-cell tn" title="True Negatives: 25 payments correctly predicted as Success">
+                  <div class="cm-val">25</div>
+                  <div class="cm-sub">True Negative (33.3%)</div>
+                </div>
+                <div class="cm-cell fp" title="False Positives: 38 successful payments flagged as potential failures (False Alarms)">
+                  <div class="cm-val">38</div>
+                  <div class="cm-sub">False Positive (50.7%)</div>
+                </div>
+
+                <div class="cm-header" style="writing-mode: vertical-rl; transform: rotate(180deg);">Actual: FAILED</div>
+                <div class="cm-cell fn" title="False Negatives: 7 failures missed by model">
+                  <div class="cm-val">7</div>
+                  <div class="cm-sub">False Negative (9.3%)</div>
+                </div>
+                <div class="cm-cell tp" title="True Positives: 5 actual failures successfully intercepted">
+                  <div class="cm-val">5</div>
+                  <div class="cm-sub">True Positive (6.7%)</div>
+                </div>
+              </div>
+
+              <div style="display: flex; justify-content: space-around; margin-top: 20px; text-align: center;">
+                <div>
+                  <div style="font-size: 11px; color: var(--text-muted);">Success Recall</div>
+                  <div style="font-size: 16px; font-weight:700; color:#fff;">39.7% (25/63)</div>
+                </div>
+                <div>
+                  <div style="font-size: 11px; color: var(--text-muted);">Failure Recall</div>
+                  <div style="font-size: 16px; font-weight:700; color:var(--primary-light);">41.7% (5/12)</div>
+                </div>
+                <div>
+                  <div style="font-size: 11px; color: var(--text-muted);">Total Tested</div>
+                  <div style="font-size: 16px; font-weight:700; color:var(--accent-cyan);">75 Txns</div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Predictions Table Explorer -->
+          <div class="table-panel">
+
+            <div class="table-toolbar">
+              <div>
+                <div class="panel-title" id="ml-explorer-title">Payment Failure Model Predictions Explorer</div>
+                <div class="panel-subtitle" id="ml-explorer-sub">Directly scored from Logistic Regression model with risk probability and status verification</div>
+              </div>
+              <div style="display:flex; gap:12px; align-items:center; flex-wrap:wrap;">
+                <select id="filter-ml-scope" class="filter-select" style="background:var(--bg-secondary); padding:8px 12px; border:1px solid var(--border-subtle); border-radius:var(--border-radius-sm);">
+                  <option value="all" selected>All Evaluated Transactions (Dataset)</option>
+                  <option value="test">Model Validation Test Set</option>
+                </select>
+                <select id="filter-ml-risk" class="filter-select" style="background:var(--bg-secondary); padding:8px 12px; border:1px solid var(--border-subtle); border-radius:var(--border-radius-sm);">
+                  <option value="all">All Risk Levels</option>
+                  <option value="High">High Risk (&ge; 52%)</option>
+                  <option value="Medium">Medium Risk (48% - 52%)</option>
+                  <option value="Low">Low Risk (&lt; 48%)</option>
+                </select>
+                <div class="search-input-wrap" style="width:200px;">
+                  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
+                  <input type="text" id="search-predictions" class="search-input" placeholder="Search Txn ID...">
+                </div>
+              </div>
+            </div>
+            <div class="table-responsive">
+              <table class="data-table" id="table-predictions">
+                <thead>
+                  <tr>
+                    <th>Transaction ID</th>
+                    <th>Gateway & Method</th>
+                    <th>Actual Status</th>
+                    <th>Predicted Failure Probability</th>
+                    <th>Probability %</th>
+                    <th>Assigned Risk Tier</th>
+                    <th>Prediction Outcome</th>
+                  </tr>
+                </thead>
+                <tbody></tbody>
+              </table>
+            </div>
+            <div class="table-pagination" id="pagination-predictions"></div>
+          </div>
+        </section>
+
+        <!-- ================================================================= -->
+        <!-- 7TH PAGE: POWER BI ARCHITECTURE & EMBED VIEWER                   -->
+        <!-- ================================================================= -->
+        <section id="page-powerbi" class="dashboard-page">
+          <!-- Power BI Architecture Headline -->
+          <div class="panel-card" style="margin-bottom: 24px; background: linear-gradient(135deg, rgba(245,158,11,0.06), rgba(99,102,241,0.06)); border: 1px solid rgba(245,158,11,0.25);">
+            <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:16px;">
+              <div>
+                <div style="display:flex; align-items:center; gap:10px; margin-bottom:6px;">
+                  <span style="font-size:24px;">📊</span>
+                  <h3 style="font-family:var(--font-display); font-size: 20px; font-weight:800; color:#fff;">Power BI Data Model & DAX Integration</h3>
+                  <span class="badge" style="background: rgba(245,158,11,0.2); color:#FBBF24;">SQL Star Schema</span>
+                </div>
+                <p style="font-size: 13px; color: var(--text-muted); max-width: 800px; line-height: 1.5;">
+                  Engineered directly from <code>digital_payment_analysis_full (1).sql</code> (Section Part 4-6). All metrics, slicers, and scorecards in this web application map 1-to-1 with Power BI fact and dimension tables, star schema joins, and DAX measures.
+                </p>
+              </div>
+              <div style="display:flex; gap:10px;">
+                <a href="/api/powerbi" target="_blank" class="btn-action-primary" style="text-decoration:none; display:inline-flex; align-items:center; gap:6px;">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>
+                  Export Power BI Schema JSON
+                </a>
+              </div>
+            </div>
+          </div>
+
+          <!-- Star Schema & Architecture Grid -->
+          <div class="grid-2" style="margin-bottom: 24px;">
+            <!-- Schema Breakdown -->
+            <div class="panel-card">
+              <div class="panel-header">
+                <div class="panel-title">Power BI Relational Star Schema</div>
+                <span class="panel-subtitle">1 Fact Table joined with 5 Dimension Tables</span>
+              </div>
+              <div style="display:flex; flex-direction:column; gap:12px; margin-top:10px;">
+                <div style="padding:12px; background:var(--bg-secondary); border-radius:8px; border-left:4px solid var(--primary-light);">
+                  <div style="font-weight:700; color:#fff; font-size:14px; margin-bottom:4px;">⭐ Fact_Transactions (5,000 Records)</div>
+                  <div style="font-size:12px; color:var(--text-muted);">
+                    <code>transaction_id</code> [PK], <code>customer_id</code> [FK], <code>gateway_id</code> [FK], <code>method_id</code> [FK], <code>amount</code>, <code>status</code>, <code>processing_seconds</code>, <code>is_recovered</code>, <code>recovered_amount</code>
+                  </div>
+                </div>
+
+                <div style="padding:12px; background:var(--bg-secondary); border-radius:8px; border-left:4px solid var(--accent-cyan);">
+                  <div style="font-weight:700; color:#fff; font-size:14px; margin-bottom:4px;">🔹 Dim_Gateway (3 Gateways)</div>
+                  <div style="font-size:12px; color:var(--text-muted);">
+                    <code>gateway_name</code> (Razorpay, Cashfree, PayU), SLA Target (3s), Payout Cycle (T+2), Fee % (2.0%)
+                  </div>
+                </div>
+
+                <div style="padding:12px; background:var(--bg-secondary); border-radius:8px; border-left:4px solid var(--accent-purple);">
+                  <div style="font-weight:700; color:#fff; font-size:14px; margin-bottom:4px;">🔹 Dim_PaymentMethod (5 Methods)</div>
+                  <div style="font-size:12px; color:var(--text-muted);">
+                    <code>payment_method</code> (GPay, Credit Card, Debit Card, NetBanking, Wallet), Channel Type (Fast/Instant vs Batch)
+                  </div>
+                </div>
+
+                <div style="padding:12px; background:var(--bg-secondary); border-radius:8px; border-left:4px solid #10B981;">
+                  <div style="font-weight:700; color:#fff; font-size:14px; margin-bottom:4px;">🔹 Dim_Date & Dim_Customer</div>
+                  <div style="font-size:12px; color:var(--text-muted);">
+                    Date Hierarchy (Month, Week, Day, Hour, Peak Window) & Customer Profile (Rolling historical failure rate)
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- DAX Measures Library -->
+            <div class="panel-card">
+              <div class="panel-header">
+                <div class="panel-title">Production DAX Measures Library</div>
+                <span class="panel-subtitle">Used across headline KPIs & drill-through matrices</span>
+              </div>
+              <div style="display:flex; flex-direction:column; gap:10px; margin-top:10px;">
+                <div style="padding:10px; background:rgba(0,0,0,0.3); border-radius:6px; font-family:var(--font-mono); font-size:12px;">
+                  <span style="color:var(--accent-cyan); font-weight:700;">[Failure Rate %]</span> = <br>
+                  <span style="color:#A78BFA;">DIVIDE</span>(<span style="color:#FBBF24;">CALCULATE</span>(COUNTROWS(Fact_Transactions), Fact_Transactions[status] = "FAILED"), COUNTROWS(Fact_Transactions), 0)
+                </div>
+                <div style="padding:10px; background:rgba(0,0,0,0.3); border-radius:6px; font-family:var(--font-mono); font-size:12px;">
+                  <span style="color:var(--accent-cyan); font-weight:700;">[Retry Recovery Volume]</span> = <br>
+                  <span style="color:#A78BFA;">CALCULATE</span>(SUM(Fact_Transactions[recovered_amount]), Fact_Transactions[is_recovered] = 1)
+                </div>
+                <div style="padding:10px; background:rgba(0,0,0,0.3); border-radius:6px; font-family:var(--font-mono); font-size:12px;">
+                  <span style="color:var(--accent-cyan); font-weight:700;">[Pending SLA Breach]</span> = <br>
+                  <span style="color:#A78BFA;">CALCULATE</span>(COUNTROWS(Fact_Transactions), Fact_Transactions[status] = "PENDING" && Fact_Transactions[processing_seconds] > 900)
+                </div>
+                <div style="padding:10px; background:rgba(0,0,0,0.3); border-radius:6px; font-family:var(--font-mono); font-size:12px;">
+                  <span style="color:var(--accent-cyan); font-weight:700;">[Net Settlement Gap]</span> = <br>
+                  <span style="color:#A78BFA;">SUM</span>(vw_settlement_gap[gap_amount])
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Interactive Power BI Live Embed Container -->
+          <div class="table-panel">
+            <div class="table-toolbar">
+              <div>
+                <div class="panel-title">Power BI Interactive Report Embed</div>
+                <div class="panel-subtitle">Embed your Power BI Service Publish-to-Web URL directly into the live dashboard</div>
+              </div>
+              <div style="display:flex; gap:10px; align-items:center;">
+                <input type="text" id="input-powerbi-url" class="search-input" style="width:340px;" placeholder="Paste Power BI Embed / Publish URL...">
+                <button class="btn-action-primary" id="btn-load-powerbi">Load Report</button>
+              </div>
+            </div>
+
+            <div id="powerbi-embed-container" style="min-height: 480px; background: rgba(15, 23, 42, 0.6); border-radius: 8px; border: 1px dashed var(--border-subtle); display:flex; flex-direction:column; align-items:center; justify-content:center; padding: 30px; text-align:center;">
+              <div style="font-size: 40px; margin-bottom: 12px;">📊</div>
+              <h4 style="color:#fff; font-size: 16px; margin-bottom: 8px;">Power BI Report Ready for Embedding</h4>
+              <p style="color:var(--text-muted); font-size: 13px; max-width: 580px; margin-bottom: 18px; line-height:1.5;">
+                To view a live embedded Power BI report, publish your Power BI Desktop file to Power BI Service, copy the <em>Publish to Web</em> public link, and paste it into the box above.
+              </p>
+              <div style="display:flex; gap:12px;">
+                <button class="btn-reset" id="btn-powerbi-sample" style="padding:8px 16px;">View Data Model Scorecard</button>
+              </div>
+            </div>
+          </div>
+        </section>
+
+      </div>
+    </main>
+  </div>
+
+  <!-- DETAILS MODAL -->
+  <div class="modal-overlay" id="modal-details">
+    <div class="modal-box">
+      <div class="modal-header">
+        <h3 id="modal-title" style="font-family:var(--font-display); font-size:18px; color:#fff;">Transaction Details</h3>
+        <button id="modal-close-btn" style="background:none; border:none; color:var(--text-muted); cursor:pointer; font-size:20px;">✕</button>
+      </div>
+      <div class="modal-body" id="modal-content">
+        <!-- Injected via JS -->
+      </div>
+      <div class="modal-footer">
+        <button class="btn-reset" id="modal-close-action">Close</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Load Embedded Data File -->
+  <script src="data.js?v=8"></script>
+  <!-- Main Application Logic -->
+  <script src="app.js?v=8"></script>
+</body>
+</html>

@@ -1,0 +1,4 @@
+# Digital Payment Analysis - Python Web Service Requirements
+# Uses Python standard library (http.server, json, math, os, sys, datetime)
+# Zero external packages needed: Guarantees 100% reliable instant build on Render
+

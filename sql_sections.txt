@@ -1,0 +1,151 @@
+Line 1: -- 1.1 CREATE DATABASE
+Line 5: -- 1.2 USE DATABASE
+Line 8: -- 1.3 CREATE TABLES
+Line 47: -- 1.4 INSERT DATA
+Line 48: -- ---- transactions ----
+Line 5069: -- ---- payment_retries ----
+Line 5513: -- ---- refunds_settlements ----
+Line 5799: -- 1.5 VERIFY ROW COUNTS (expected: 5000, 441, 283)
+Line 5805: -- PART 2 | DATA PROFILING
+Line 5808: -- 1.1 Row count per table
+Line 5813: -- 1.2 Column metadata (name, type, nullability, key)
+Line 5821: -- 2.1 transactions
+Line 5834: -- 2.2 payment_retries
+Line 5844: -- 2.3 refunds_settlements  (settlement_id NULL is EXPECTED for unsettled refunds)
+Line 5856: -- 3.1 Key uniqueness (total = distinct means no duplicate keys)
+Line 5871: -- 3.2 Business-level duplicates: same customer, method, gateway, amount and timestamp
+Line 5877: -- 3.3 More than one retry row / refund row for the same transaction
+Line 5886: -- 3.4 Cardinality of every categorical / identifier column
+Line 5894: -- 4.1 Summary statistics for every numeric column
+Line 5916: -- 4.2 Median transaction amount
+Line 5924: -- 4.3 Outlier scan: amounts outside mean +/- 3 standard deviations
+Line 5930: -- 4.4 Amount distribution in bands of 5,000
+Line 5938: -- 4.5 Precision check: values with more than 2 decimal places
+Line 5943: -- 5. CATEGORICAL PROFILE  (value frequencies with % share)
+Line 5970: -- 5.2 Status vs error_code cross-tab
+Line 5976: -- 5.3 Payment method vs gateway cross-tab
+Line 5985: -- 5.4 Text hygiene: leading/trailing spaces and inconsistent case/spelling
+Line 6001: -- 6. FORMAT VALIDATION  (regular expressions; 0 violations expected)
+Line 6010: -- 7.1 Date range per table
+Line 6018: -- 7.2 Volume by month
+Line 6025: -- 7.3 Volume by hour of day
+Line 6031: -- 7.4 Processing time (updated_at - created_at, seconds) by status
+Line 6040: -- 7.5 PENDING transactions grouped by how long they have been stuck
+Line 6047: -- 8. REFERENTIAL INTEGRITY  (orphan records; 0 expected)
+Line 6056: -- 9. BUSINESS-RULE CONSISTENCY  (single summary table; 0 = rule holds)
+Line 6087: -- 10.1 Success / failure / pending rate by gateway
+Line 6095: -- 10.2 Success / failure / pending rate by payment method
+Line 6102: -- 10.3 Retry recovery: share of FAILED transactions that were retried successfully
+Line 6109: -- 10.4 Refund exposure by refund status
+Line 6116: -- 10.5 Customer activity: transactions per customer
+Line 6120: -- DATA CLEANING
+Line 6124: -- IF NOT EXISTS: a second run never overwrites the ORIGINAL backup.
+Line 6139: -- 1.1 transactions: canonical spelling for payment method and gateway
+Line 6156: -- 1.2 transactions: upper-case codes and customer ids
+Line 6164: -- 1.3 payment_retries
+Line 6169: -- 1.4 refunds_settlements
+Line 6177: -- 2.1 settlement_id: 'None', 'NULL', 'N/A', blank  ->  NULL
+Line 6184: -- 2.2 error_code: the sentinel 'ERR_NONE' means "no error"  ->  NULL
+Line 6190: -- STEP 3. REMOVE DUPLICATE TRANSACTIONS
+Line 6223: -- STEP 4. REMOVE INVALID VALUES  (amounts must be > 0)
+Line 6247: -- STEP 5. FIX LOGICAL INCONSISTENCIES
+Line 6249: -- 5.1 updated_at earlier than created_at  ->  swap the two timestamps
+Line 6259: -- 5.2 refund larger than the original payment  ->  cap at the payment amount
+Line 6267: -- 5.3 round money columns to 2 decimals
+Line 6272: -- STEP 6. ANALYSIS-READY VIEW  (derived columns, no change to base tables)
+Line 6318: -- =====================================================================
+Line 6319: -- STEP 7. OPTIONAL HARD CONSTRAINTS  (run ONCE; keeps future loads clean)
+Line 6320: --         MySQL 8.0.16+ / MariaDB 10.2+. Uncomment to enable.
+Line 6321: -- =====================================================================
+Line 6322: -- ALTER TABLE transactions        ADD CONSTRAINT chk_txn_amount    CHECK (amount > 0);
+Line 6323: -- ALTER TABLE transactions        ADD CONSTRAINT chk_txn_status    CHECK (status IN ('SUCCESS','FAILED','PENDING'));
+Line 6324: -- ALTER TABLE transactions        ADD CONSTRAINT chk_txn_dates     CHECK (updated_at >= created_at);
+Line 6325: -- ALTER TABLE payment_retries     ADD CONSTRAINT chk_retry_amount  CHECK (recovered_amount > 0);
+Line 6326: -- ALTER TABLE refunds_settlements ADD CONSTRAINT chk_refund_amount CHECK (refund_amount > 0);
+Line 6330: -- =====================================================================
+Line 6331: -- STEP 8. VALIDATION
+Line 6332: -- =====================================================================
+Line 6334: -- 8.1 What the cleaning changed (rows affected per step)
+Line 6339: -- 8.2 Row counts: before (backup) vs after (cleaned)
+Line 6353: -- 8.3 Re-run of the quality rules on the cleaned data (every line should be 0)
+Line 6383: -- 8.4 Preview of the analysis-ready view
+Line 6391: -- PART 4-6 | ANALYSIS: CORE + NEW FEATURES + POWER BI
+Line 6394: -- PART 4 | CORE FAILURE ANALYSIS  (the standard payment-failure project)
+Line 6400: -- ---------------------------------------------------------------------
+Line 6401: -- 4.1 EXECUTIVE KPI SUMMARY  (headline cards)
+Line 6402: -- ---------------------------------------------------------------------
+Line 6418: -- 4.2 TREND OVER TIME
+Line 6436: -- 4.2b Weekly trend (weeks start on Monday)
+Line 6446: -- 4.3 GATEWAY PERFORMANCE SCORECARD
+Line 6463: -- 4.4 PAYMENT METHOD PERFORMANCE SCORECARD
+Line 6479: -- 4.5 GATEWAY x PAYMENT METHOD  (which combination is the weakest?)
+Line 6480: -- 4.5a Ranked list (non-success = FAILED + PENDING)
+Line 6492: -- 4.5b Heat-map layout: failure rate % (rows = method, columns = gateway)
+Line 6502: -- 4.6 ERROR CODE ANALYSIS  (why do payments fail?)
+Line 6503: -- 4.6a Error codes ranked by volume
+Line 6517: -- 4.6b Who can fix it?  (Technical = the company / gateway can fix)
+Line 6528: -- 4.6c Error code by gateway (counts)
+Line 6539: -- 4.6d Error code by payment method (counts)
+Line 6552: -- 4.7 WHEN DO FAILURES HAPPEN?  Hour of day
+Line 6553: -- 4.7a Failure rate for each hour
+Line 6568: -- 4.7b Time-band summary
+Line 6581: -- 4.7c The 5 worst hours for failures
+Line 6590: -- 4.8 DAY OF WEEK
+Line 6601: -- 4.9 TICKET SIZE  (do big payments fail more?)
+Line 6602: -- 4.9a Failure rate by amount band
+Line 6613: -- 4.9b The 10 largest failed payments
+Line 6620: -- 4.10 PROCESSING TIME  (seconds from created_at to updated_at)
+Line 6621: -- 4.10a By outcome
+Line 6629: -- 4.10b Speed of SUCCESSFUL payments by gateway (p50 / p90 percentiles)
+Line 6647: -- 4.11 CUSTOMER IMPACT
+... and 88 more comments
+Line 7060: -- PART 5C | NEW FEATURE 3  -  REFUND & SETTLEMENT RECONCILIATION
+Line 7062: -- business_days_open = Mon-Fri days elapsed between the refund request and the snapshot
+Line 7063: --                      (request day excluded, weekends excluded, public holidays ignored).
+Line 7064: -- Open refunds (not COMPLETED) older than 5 business days are STUCK, 3-5 business days AT RISK.
+Line 7065: -- was_capped_in_cleaning: cleaning step 5.2 caps refund_amount at the payment amount, so the
+Line 7066: --                      ORIGINAL amount is read back from refunds_settlements_backup to keep
+Line 7067: --                      the "refund exceeds payment" exception visible.
+Line 7126: -- 5C.1 Initiated vs processing vs completed (count and value)
+Line 7136: -- 5C.2 Refund completion by gateway
+Line 7152: -- 5C.3 Refund completion by payment method
+Line 7166: -- 5C.4 Refund rate: how much of successful revenue is refunded?
+Line 7190: -- 5C.5 Unsettled refunds by age (how long has the money been owed?)
+Line 7203: -- 5C.6 Reconciliation ledger by gateway
+Line 7232: -- 5C.7 Exceptions summary: which refunds need investigation?
+Line 7242: -- 5C.8 Investigation load by gateway and payment method
+Line 7252: -- 5C.9 Investigation work-list: the 25 highest-value aged / mismatched refunds
+Line 7261: -- 5C.10 How fast do customers ask for refunds after paying?
+Line 7272: -- 5C.11 Monthly refund requests: initiated vs completed
+Line 7284: -- =====================================================================
+Line 7285: -- PART 5D | SETTLEMENT GAP ANALYSIS  (captured amount vs gateway payout)
+Line 7286: -- =====================================================================
+Line 7287: -- The original data has no gateway settlement file, so one is built here:
+Line 7288: --   * vw_gateway_daily_net     = what WE captured per gateway per day, net of completed refunds
+Line 7289: --   * gateway_settlements      = SYNTHETIC gateway payout file (one batch per gateway per capture
+Line 7290: --                                day, paid T+2, 2% gateway fee). About 1 batch in 17 is short-paid
+Line 7291: --                                and 1 in 23 is never paid. The anomalies are injected with CRC32 of
+Line 7292: --                                the batch id, so every re-run produces the same data.
+Line 7293: --   * vw_settlement_gap        = expected payout vs reported payout, one row per batch.
+Line 7294: -- Replace the INSERT below with a LOAD DATA of a real Razorpay / Cashfree / PayU settlement report
+Line 7295: -- (same six columns) to run the same analysis on real files.
+Line 7373: -- 5D.1 Settlement gap by gateway: expected payout vs payout received
+Line 7388: -- 5D.2 Monthly settlement gap
+Line 7399: -- 5D.3 Settlement investigation work-list: the 25 largest gaps
+Line 7407: -- =====================================================================
+Line 7408: -- PART 5E | REFUND SLA (BUSINESS DAYS) AND CLEANING EXCEPTIONS
+Line 7409: -- =====================================================================
+Line 7410: -- 5E.1 Open refunds by business days since the request (SLA: 3-5 business days)
+Line 7424: -- 5E.2 Open refunds over 5 business days, by gateway
+Line 7435: -- 5E.3 Refunds that exceeded the original payment (capped during cleaning step 5.2)
+Line 7443: -- =====================================================================
+Line 7444: -- PART 5F | RECONCILIATION AUDIT LIST  (items needing manual investigation)
+Line 7445: -- =====================================================================
+Line 7446: -- One list, three exception types:
+Line 7447: --   DEBIT_NOT_CAPTURED : payment still PENDING at the gateway (customer may be debited, money not captured)
+Line 7448: --   REFUND_EXCEPTION   : refund mismatched, aged, or stuck over 5 business days
+Line 7449: --   SETTLEMENT_GAP     : gateway payout short, over, or overdue for a capture day
+Line 7450: -- Priority: P1 = act now, P2 = investigate this week, P3 = monitor.
+Line 7499: -- 5F.1 Audit summary: how much needs investigation?
+Line 7507: -- 5F.2 Audit list: the 50 highest-priority, highest-value items
+Line 7514: -- 5F.3 Audit load by gateway
